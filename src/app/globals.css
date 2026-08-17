@@ -1,26 +1,132 @@
 @import "tailwindcss";
 
+/* Тема переключается атрибутом [data-theme] на <html>, с откатом на системную. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f5f5f4;
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+
+  --fg: #1c1917;
+  --muted: #57534e;
+  --faint: #a8a29e;
+
+  --accent: #0d9488;
+  --accent-fg: #ffffff;
+  --accent-soft: #ccfbf1;
+
+  --positive: #15803d;
+  --positive-soft: #dcfce7;
+  --negative: #b91c1c;
+  --negative-soft: #fee2e2;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+
+  /* Проверено scripts/validate_palette.js: диапазон светлоты, порог насыщенности,
+     различимость при дальтонизме и контраст к фону — все проверки пройдены. */
+  --chart-1: #0d9488;
+  --chart-2: #6366f1;
+  --chart-3: #d97706;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0a09;
+    --surface: #1c1917;
+    --surface-2: #262322;
+    --border: #292524;
+    --border-strong: #44403c;
+
+    --fg: #fafaf9;
+    --muted: #a8a29e;
+    --faint: #78716c;
+
+    --accent: #2dd4bf;
+    --accent-fg: #042f2e;
+    --accent-soft: #134e4a;
+
+    --positive: #4ade80;
+    --positive-soft: #14532d;
+    --negative: #f87171;
+    --negative-soft: #7f1d1d;
+    --warning: #fbbf24;
+    --warning-soft: #78350f;
+
+    /* Тёмные шаги подобраны под тёмный фон отдельно: диапазон светлоты для тёмной
+       темы уже (L 0.48–0.67), поэтому осветлённые версии светлых цветов не проходят. */
+    --chart-1: #0f9e8e;
+    --chart-2: #7b73e8;
+    --chart-3: #c98500;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c0a09;
+  --surface: #1c1917;
+  --surface-2: #262322;
+  --border: #292524;
+  --border-strong: #44403c;
+
+  --fg: #fafaf9;
+  --muted: #a8a29e;
+  --faint: #78716c;
+
+  --accent: #2dd4bf;
+  --accent-fg: #042f2e;
+  --accent-soft: #134e4a;
+
+  --positive: #4ade80;
+  --positive-soft: #14532d;
+  --negative: #f87171;
+  --negative-soft: #7f1d1d;
+  --warning: #fbbf24;
+  --warning-soft: #78350f;
+
+  --chart-1: #0f9e8e;
+  --chart-2: #7b73e8;
+  --chart-3: #c98500;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Денежные суммы и любые колонки цифр — табличные цифры, иначе столбцы «пляшут». */
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
