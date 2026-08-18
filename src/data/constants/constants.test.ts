@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { compare, isCivilDate } from "@/domain/time";
 import { isMissing, resolve } from "@/domain/registry";
 import { todayCivil } from "@/lib/today";
-import { ALL_SERIES, MRP, MZP, OPVR_RATE, getConstantSet, kdifLimitFor } from "./index";
+import { ALL_SERIES, MRP, MZP, getConstantSet, kdifLimitFor } from "./index";
 
 const TODAY = todayCivil();
 
@@ -95,18 +95,6 @@ describe("значения на 2026 год", () => {
     expect(r.value).toBe(8_500_000);
   });
 
-  it("ставка ОПВР растёт по графику 1,5 → 5 %", () => {
-    const at = (d: string) => {
-      const r = resolve(OPVR_RATE, d);
-      if (isMissing(r)) throw new Error(`ОПВР не найден на ${d}`);
-      return r.value;
-    };
-    expect(at("2024-06-01")).toBeCloseTo(0.015, 10);
-    expect(at("2025-06-01")).toBeCloseTo(0.025, 10);
-    expect(at("2026-06-01")).toBeCloseTo(0.035, 10);
-    expect(at("2027-06-01")).toBeCloseTo(0.045, 10);
-    expect(at("2029-06-01")).toBeCloseTo(0.05, 10);
-  });
 });
 
 describe("гарантия КФГД", () => {
@@ -131,7 +119,7 @@ describe("getConstantSet", () => {
     const set = getConstantSet("2026-06-01");
     expect(set.asOf).toBe("2026-06-01");
     expect(set.mrp.value).toBe(432_500);
-    // В наборе есть непроверенные величины (госпремия, пенсионный возраст женщин),
+    // Ставка налога на вознаграждение внесена без сверки с Налоговым кодексом,
     // поэтому весь набор не может считаться полностью проверенным.
     expect(set.worstConfidence).toBe("unverified");
   });

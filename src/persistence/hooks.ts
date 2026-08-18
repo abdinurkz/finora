@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import type { RecurringPayment } from "@/domain/recurring/payment";
-import type { Promotion } from "@/data/types";
-import { paymentsCollection, promotionsCollection, settingsStore, storageAdapter } from "./index";
+import { paymentsCollection, settingsStore, storageAdapter } from "./index";
 import type { LoadStatus, Settings } from "./types";
 
 /**
@@ -59,44 +58,6 @@ export function usePayments(): {
       [],
     ),
     clear: useCallback(() => paymentsCollection.clear(), []),
-  };
-}
-
-export function usePromotions(): {
-  promotions: readonly Promotion[];
-  status: LoadStatus;
-  save: (promotion: Promotion) => void;
-  remove: (id: string) => void;
-  replaceAll: (promotions: readonly Promotion[]) => void;
-} {
-  const promotions = useSyncExternalStore(
-    promotionsCollection.subscribe,
-    promotionsCollection.getSnapshot,
-    promotionsCollection.getServerSnapshot,
-  );
-
-  const status = useSyncExternalStore(
-    promotionsCollection.subscribe,
-    promotionsCollection.getStatus,
-    promotionsCollection.getServerStatus,
-  );
-
-  useEffect(() => {
-    void promotionsCollection.hydrate();
-    return storageAdapter.subscribeExternal((collection) => {
-      if (collection === "promotions") void promotionsCollection.refresh();
-    });
-  }, []);
-
-  return {
-    promotions,
-    status,
-    save: useCallback((promotion: Promotion) => promotionsCollection.put(promotion), []),
-    remove: useCallback((id: string) => promotionsCollection.remove(id), []),
-    replaceAll: useCallback(
-      (next: readonly Promotion[]) => promotionsCollection.replaceAll(next),
-      [],
-    ),
   };
 }
 

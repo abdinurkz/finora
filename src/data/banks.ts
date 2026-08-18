@@ -24,15 +24,6 @@ export const BANKS: readonly Bank[] = [
     verifiedAt: "2026-08-17",
   },
   {
-    id: "otbasy",
-    name: "Отбасы банк",
-    legalName: "АО «Отбасы банк»",
-    kind: "housing",
-    siteUrl: "https://hcsbk.kz",
-    isKdifMember: true,
-    verifiedAt: "2026-08-17",
-  },
-  {
     id: "freedom",
     name: "Freedom Bank",
     legalName: "АО «Freedom Bank Kazakhstan»",

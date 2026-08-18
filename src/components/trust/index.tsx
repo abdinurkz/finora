@@ -46,6 +46,37 @@ export function ConfidenceBadge({
   );
 }
 
+const TONE_TEXT: Record<Confidence, string> = {
+  verified: "text-positive",
+  likely: "text-muted",
+  unverified: "text-warning",
+  placeholder: "text-negative",
+};
+
+/**
+ * Метка достоверности одной иконкой — для плотных мест вроде строк таблицы,
+ * где бейдж с подписью повторялся бы в каждой строке и превращался в шум.
+ * Статусы различаются формой иконки, а не только цветом; полная подпись
+ * доступна в подсказке и для скринридера.
+ */
+export function ConfidenceMark({
+  confidence,
+  className,
+}: {
+  confidence: Confidence;
+  className?: string;
+}) {
+  return (
+    <span
+      title={CONFIDENCE_LABELS[confidence]}
+      aria-label={`Достоверность: ${CONFIDENCE_LABELS[confidence]}`}
+      className={cn("inline-flex", TONE_TEXT[confidence], className)}
+    >
+      <Icon name={ICON[confidence]} size={14} />
+    </span>
+  );
+}
+
 /** Ссылка на первоисточник с датой, когда его последний раз открывали. */
 export function SourceLink({ source }: { source?: MethodRef["source"] }) {
   if (!source) return null;

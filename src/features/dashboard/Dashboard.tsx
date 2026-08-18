@@ -163,11 +163,9 @@ export function Dashboard({ today: serverToday }: { today: string }) {
 
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-faint">Калькуляторы</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3">
           {[
             { href: "/deposits/calculator", icon: "calculator", label: "Депозит", hint: "Расчёт вклада и ГЭСВ" },
-            { href: "/otbasy", icon: "home", label: "ОП Отбасы", hint: "Срок до ОП 5 и ОП 16" },
-            { href: "/pension", icon: "clock", label: "Пенсия", hint: "Проекция накоплений ЕНПФ" },
           ].map((item) => (
             <Link key={item.href} href={item.href} className="group">
               <Card className="h-full transition-colors group-hover:border-border-strong">
@@ -188,11 +186,10 @@ export function Dashboard({ today: serverToday }: { today: string }) {
 
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-faint">Справочники БВУ</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
             { href: "/deposits", icon: "bank", label: "Депозиты", hint: "Ставки с датой актуальности" },
             { href: "/cashback", icon: "card", label: "Кэшбэк", hint: "Подбор карты по категории" },
-            { href: "/promos", icon: "tag", label: "Акции", hint: "Действующие предложения" },
           ].map((item) => (
             <Link key={item.href} href={item.href} className="group">
               <Card className="h-full transition-colors group-hover:border-border-strong">

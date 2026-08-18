@@ -7,7 +7,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         title="Finora"
-        description="Личные финансы в Казахстане: калькуляторы депозитов и пенсии, справочники ставок БВУ и учёт регулярных платежей."
+        description="Личные финансы в Казахстане: калькулятор депозитов, справочники ставок БВУ и учёт регулярных платежей."
       />
       <Dashboard today={todayCivil()} />
     </>

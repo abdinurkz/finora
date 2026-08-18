@@ -9,9 +9,9 @@ import { getConstantSet } from "@/data/constants";
 import type { Bank, DepositProduct, RateRecord } from "@/data/types";
 import { formatDate, formatMoney, formatMoneyCompact, formatRate } from "@/lib/format";
 import { useToday } from "@/lib/useToday";
-import { Badge, Card, EmptyState, Icon, Note, Stat, StatGrid } from "@/components/ui";
+import { Badge, Card, EmptyState, Icon, Note } from "@/components/ui";
 import { Field, MoneyInput, SegmentedControl, Select } from "@/components/ui/inputs";
-import { ConfidenceBadge } from "@/components/trust";
+import { ConfidenceMark } from "@/components/trust";
 
 interface Row {
   readonly product: DepositProduct;
@@ -100,7 +100,6 @@ export function DepositExplorer({
     return out.sort((a, b) => b.effectiveRate - a.effectiveRate);
   }, [products, banks, rates, currency, kind, needsTopUp, needsWithdrawal, amountMinor, today, constants]);
 
-  const best = rows[0];
   const kindOptions = [
     { value: "all" as const, label: "Все виды" },
     ...(Object.keys(DEPOSIT_KIND_LABELS) as DepositKind[]).map((k) => ({
@@ -116,7 +115,7 @@ export function DepositExplorer({
         <p className="mt-0.5 text-muted">
           Это стартовый набор для сравнения условий: структура продуктов реальна, а проценты —
           ориентировочные. Перед открытием вклада проверьте ставку на сайте банка по ссылке
-          в карточке.
+          в строке.
         </p>
       </Note>
 
@@ -171,35 +170,6 @@ export function DepositExplorer({
         </div>
       </Card>
 
-      {best && (
-        <Card>
-          <div className="mb-3 flex items-center gap-2">
-            <Badge tone="accent" icon="check">
-              лучшая доходность по фильтру
-            </Badge>
-            <span className="text-sm font-medium">
-              {best.bank.name} · {best.product.name}
-            </span>
-          </div>
-          <StatGrid cols={3}>
-            <Stat
-              label="Эффективная ставка"
-              value={formatRate(best.effectiveRate)}
-              sub={`номинальная ${formatRate(best.rate.nominalAnnualRate)}`}
-              tone="positive"
-            />
-            <Stat
-              label={`Вознаграждение за ${best.product.termMonths} мес.`}
-              value={formatMoney(best.interestMinor, best.product.currency)}
-            />
-            <Stat
-              label="Сумма в конце срока"
-              value={formatMoney(best.finalBalanceMinor, best.product.currency)}
-            />
-          </StatGrid>
-        </Card>
-      )}
-
       {rows.length === 0 ? (
         <EmptyState
           icon="bank"
@@ -207,92 +177,120 @@ export function DepositExplorer({
           description="Смягчите фильтры: например, снимите требование пополнения или частичного изъятия."
         />
       ) : (
-        <div className="flex flex-col gap-3">
-          {rows.map((row) => (
-            <Card key={row.product.id}>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-fg">{row.bank.name}</span>
-                    <span className="text-muted">·</span>
-                    <span className="text-fg">{row.product.name}</span>
-                    {row.bank.kind === "housing" && (
-                      <Badge tone="neutral" title="Жилищный строительный сберегательный банк">
-                        жилищный
-                      </Badge>
-                    )}
-                  </div>
+        <Card padded={false}>
+          {/* Таблица шире мобильного экрана, поэтому скроллится внутри себя,
+              а не растягивает страницу по горизонтали. */}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[880px] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wider text-faint">
+                  <th scope="col" className="px-4 py-2.5">Банк и продукт</th>
+                  <th scope="col" className="px-2.5 py-2.5">Вид</th>
+                  <th scope="col" className="px-2.5 py-2.5 text-right">Срок</th>
+                  <th scope="col" className="px-2.5 py-2.5 text-right">Мин. сумма</th>
+                  <th scope="col" className="px-2.5 py-2.5">Условия</th>
+                  <th scope="col" className="px-2.5 py-2.5 text-right">Номинал</th>
+                  <th scope="col" className="px-2.5 py-2.5 text-right">Эффективная</th>
+                  <th scope="col" className="px-2.5 py-2.5 text-right">Вознаграждение</th>
+                  <th scope="col" className="px-2.5 py-2.5">
+                    {/* Подпись только для скринридера: в ячейках две иконки,
+                        и слово «Источник» растягивало бы колонку втрое. */}
+                    <span className="sr-only">Источник</span>
+                  </th>
+                </tr>
+              </thead>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                    <span>{DEPOSIT_KIND_LABELS[row.product.kind]}</span>
-                    <span>{row.product.termMonths} мес.</span>
-                    {row.product.minAmountMinor !== undefined && (
-                      <span>от {formatMoneyCompact(row.product.minAmountMinor, row.product.currency)}</span>
-                    )}
-                    <span className={row.product.topUpAllowed ? "text-positive" : undefined}>
-                      {row.product.topUpAllowed ? "с пополнением" : "без пополнения"}
-                    </span>
-                    <span className={row.product.partialWithdrawalAllowed ? "text-positive" : undefined}>
-                      {row.product.partialWithdrawalAllowed ? "с изъятием" : "без изъятия"}
-                    </span>
-                  </div>
+              <tbody className="divide-y divide-border">
+                {rows.map((row) => (
+                  <tr key={row.product.id} className="transition-colors hover:bg-surface-2">
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/deposits/calculator?amount=${amountMinor}&rate=${row.rate.nominalAnnualRate}&term=${row.product.termMonths}&kind=${row.product.kind}&compounding=${row.product.compounding}`}
+                        title="Посчитать подробно"
+                        className="font-medium text-fg hover:text-accent hover:underline"
+                      >
+                        {row.product.name}
+                      </Link>
+                      <div className="text-xs text-muted">{row.bank.name}</div>
+                    </td>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <ConfidenceBadge confidence={row.rate.confidence} />
-                    <span className="text-xs text-faint">
-                      внесено {formatDate(row.rate.verifiedAt)}
-                      {row.staleDays > 90 && ` · ${row.staleDays} дней назад`}
-                    </span>
-                    <a
-                      href={row.rate.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-muted underline decoration-border underline-offset-2 hover:text-fg"
-                    >
-                      проверить на сайте
-                      <Icon name="external" size={11} />
-                    </a>
-                  </div>
-                </div>
+                    <td className="px-2.5 py-3 text-muted">{DEPOSIT_KIND_LABELS[row.product.kind]}</td>
 
-                <div className="text-right">
-                  <div className="tabular text-xl font-semibold tracking-tight text-fg">
-                    {formatRate(row.effectiveRate)}
-                  </div>
-                  <div className="text-xs text-faint">
-                    эффективная · номинал {formatRate(row.rate.nominalAnnualRate)}
-                  </div>
-                  <div className="tabular mt-1 text-sm text-positive">
-                    +{formatMoney(row.interestMinor, row.product.currency)}
-                  </div>
-                  {!row.kdifCovered && (
-                    <div className="mt-1.5">
-                      <Badge tone="warning" icon="alert" title="Сумма превышает гарантию КФГД">
-                        сверх гарантии
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    <td className="tabular px-2.5 py-3 text-right text-muted whitespace-nowrap">
+                      {row.product.termMonths} мес.
+                    </td>
 
-              <div className="mt-3 border-t border-border pt-3">
-                <Link
-                  href={`/deposits/calculator?amount=${amountMinor}&rate=${row.rate.nominalAnnualRate}&term=${row.product.termMonths}&kind=${row.product.kind}&compounding=${row.product.compounding}`}
-                  className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
-                >
-                  Посчитать подробно
-                  <Icon name="chevronRight" size={14} />
-                </Link>
-              </div>
-            </Card>
-          ))}
-        </div>
+                    <td className="tabular px-2.5 py-3 text-right text-muted whitespace-nowrap">
+                      {row.product.minAmountMinor === undefined
+                        ? "—"
+                        : formatMoneyCompact(row.product.minAmountMinor, row.product.currency)}
+                    </td>
+
+                    <td className="px-2.5 py-3 text-xs whitespace-nowrap">
+                      <div className={row.product.topUpAllowed ? "text-positive" : "text-faint"}>
+                        {row.product.topUpAllowed ? "с пополнением" : "без пополнения"}
+                      </div>
+                      <div
+                        className={row.product.partialWithdrawalAllowed ? "text-positive" : "text-faint"}
+                      >
+                        {row.product.partialWithdrawalAllowed ? "с изъятием" : "без изъятия"}
+                      </div>
+                    </td>
+
+                    <td className="tabular px-2.5 py-3 text-right text-muted">
+                      {formatRate(row.rate.nominalAnnualRate)}
+                    </td>
+
+                    <td className="tabular px-2.5 py-3 text-right font-semibold text-fg">
+                      {formatRate(row.effectiveRate)}
+                    </td>
+
+                    <td className="px-2.5 py-3 text-right whitespace-nowrap">
+                      <div className="tabular text-positive">
+                        +{formatMoney(row.interestMinor, row.product.currency)}
+                      </div>
+                      {!row.kdifCovered && (
+                        <Badge
+                          tone="warning"
+                          icon="alert"
+                          title="Сумма превышает гарантию КФГД"
+                          className="mt-1"
+                        >
+                          сверх гарантии
+                        </Badge>
+                      )}
+                    </td>
+
+                    <td className="px-2.5 py-3">
+                      <div className="flex items-center gap-2">
+                        <ConfidenceMark confidence={row.rate.confidence} />
+                        <a
+                          href={row.rate.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Проверить ставку на сайте: ${row.bank.name}`}
+                          title={`Внесено ${formatDate(row.rate.verifiedAt)}${
+                            row.staleDays > 90 ? ` · ${row.staleDays} дней назад` : ""
+                          }`}
+                          className="text-muted transition-colors hover:text-fg"
+                        >
+                          <Icon name="external" size={13} />
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
 
       <p className="text-xs text-faint">
-        Эффективная ставка рассчитана нашим движком по фактическому денежному потоку на одинаковых
-        допущениях для всех продуктов, поэтому может отличаться от ГЭСВ, публикуемой банком.
-        База начисления везде принята как ACT/365 — банки её обычно не раскрывают.
+        Строки отсортированы по эффективной ставке. Она рассчитана нашим движком по фактическому
+        денежному потоку на одинаковых допущениях для всех продуктов, поэтому может отличаться
+        от ГЭСВ, публикуемой банком. База начисления везде принята как ACT/365 — банки её обычно
+        не раскрывают.
       </p>
     </div>
   );

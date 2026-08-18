@@ -77,50 +77,12 @@ export const settingsSchema = z.object({
   upcomingWindowDays: z.number().int().min(1).max(365),
 });
 
-/** Акции вносит сам пользователь: встроенный каталог намеренно пуст. */
-export const promotionSchema = z.object({
-  id: z.string().min(1),
-  bankId: z.string().min(1),
-  title: z.string().min(1).max(200),
-  summary: z.string().max(1000),
-  kind: z.enum(["deposit-rate", "cashback", "fee-waiver", "installment", "referral", "other"]),
-  startsAt: civilDate,
-  endsAt: civilDate.optional(),
-  conditions: z.array(z.string().max(500)).max(20),
-  url: z.string().max(2000),
-  verifiedAt: civilDate,
-  confidence: z.enum(["verified", "likely", "unverified", "placeholder"]),
-});
-
-export const promotionsSchema = z.array(promotionSchema);
-
-export function parsePromotionsLenient(input: unknown): {
-  valid: z.infer<typeof promotionsSchema>;
-  errors: string[];
-} {
-  if (!Array.isArray(input)) return { valid: [], errors: ["Ожидался список акций"] };
-
-  const valid: z.infer<typeof promotionsSchema> = [];
-  const errors: string[] = [];
-
-  for (const [i, raw] of input.entries()) {
-    const parsed = promotionSchema.safeParse(raw);
-    if (parsed.success) valid.push(parsed.data);
-    else errors.push(`Акция №${i + 1}: ${parsed.error.issues[0]?.message ?? "неверный формат"}`);
-  }
-
-  return { valid, errors };
-}
-
 export const backupSchema = z.object({
   app: z.literal("finora"),
   version: z.number().int().min(1).max(BACKUP_VERSION),
   exportedAt: z.string(),
   payments: paymentsSchema,
   settings: settingsSchema,
-  // Появилось позже платежей, поэтому поле необязательное: копии,
-  // сделанные до его добавления, должны продолжать восстанавливаться.
-  promotions: promotionsSchema.optional(),
 });
 
 /**

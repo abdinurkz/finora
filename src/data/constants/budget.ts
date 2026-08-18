@@ -46,12 +46,12 @@ export const MRP: DatedSeries<number> = {
   ],
 };
 
-/** МЗП — минимальный размер заработной платы. Ограничивает базу пенсионных взносов. */
+/** МЗП — минимальный размер заработной платы. */
 export const MZP: DatedSeries<number> = {
   key: "mzp",
   label: "МЗП",
   unit: "KZT",
-  description: "Минимальный размер заработной платы. Задаёт нижнюю и верхнюю границу базы ОПВ и ОПВР.",
+  description: "Минимальный размер заработной платы, утверждаемый законом о республиканском бюджете.",
   entries: [
     {
       value: 8_500_000,
@@ -62,21 +62,6 @@ export const MZP: DatedSeries<number> = {
     },
     {
       value: 8_500_000,
-      effectiveFrom: "2026-01-01",
-      confidence: "verified",
-      source: BUDGET_LAW_2026,
-    },
-  ],
-};
-
-/** Минимальная государственная базовая пенсионная выплата. */
-export const BASE_PENSION_MIN: DatedSeries<number> = {
-  key: "pension.baseMin",
-  label: "Минимальная базовая пенсионная выплата",
-  unit: "KZT",
-  entries: [
-    {
-      value: 3_559_600,
       effectiveFrom: "2026-01-01",
       confidence: "verified",
       source: BUDGET_LAW_2026,

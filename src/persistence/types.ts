@@ -1,5 +1,4 @@
 import type { RecurringPayment } from "@/domain/recurring/payment";
-import type { Promotion } from "@/data/types";
 
 /**
  * Интерфейс намеренно асинхронный, хотя первый адаптер (localStorage) работает
@@ -43,7 +42,6 @@ export interface BackupFile {
   readonly exportedAt: string;
   readonly payments: readonly RecurringPayment[];
   readonly settings: Settings;
-  readonly promotions?: readonly Promotion[];
 }
 
 export const BACKUP_VERSION = 1;

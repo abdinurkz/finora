@@ -3,8 +3,8 @@
 /**
  * Графики собственной сборки вместо библиотеки.
  *
- * Нужны три простые формы (накопление вклада, рост ОП, пенсионная проекция),
- * и все три — это путь в SVG плюс линейная шкала. Recharts тянет d3 и ~100 КБ
+ * Нужна одна простая форма (накопление вклада) — это путь в SVG плюс
+ * линейная шкала. Recharts тянет d3 и ~100 КБ
  * ради того, что здесь занимает пару сотен строк и тематизируется теми же
  * токенами Tailwind, что и остальной интерфейс.
  *
@@ -308,137 +308,6 @@ export function StackedAreaChart({
       )}
 
       <Legend series={series} />
-    </figure>
-  );
-}
-
-/* ── Линия с пороговыми уровнями ────────────────────────────────── */
-
-export interface Threshold {
-  readonly value: number;
-  readonly label: string;
-  readonly tone?: "accent" | "positive" | "muted";
-}
-
-export function LineChart({
-  series,
-  xLabels,
-  formatValue,
-  formatAxis,
-  thresholds = [],
-  ariaLabel,
-  className,
-}: {
-  series: ChartSeries;
-  xLabels: readonly string[];
-  formatValue: (v: number) => string;
-  formatAxis: (v: number) => string;
-  thresholds?: readonly Threshold[];
-  ariaLabel: string;
-  className?: string;
-}) {
-  const count = series.values.length;
-  const { hover, onMove, onLeave } = useHover(count);
-
-  if (count === 0) return null;
-
-  const peak = Math.max(...series.values, ...thresholds.map((t) => t.value), 1);
-  const max = niceMax(peak * 1.05);
-
-  const points = series.values.map((v, i) => `${xAt(i, count)},${yAt(v, max)}`).join(" ");
-  const areaPath = `M ${xAt(0, count)},${yAt(0, max)} L ${points} L ${xAt(count - 1, count)},${yAt(0, max)} Z`;
-
-  return (
-    <figure className={cn("relative", className)}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={ariaLabel} className="overflow-visible">
-        <Grid max={max} format={formatAxis} />
-
-        <path d={areaPath} fill={`var(--${series.color})`} fillOpacity={0.12} />
-        <polyline
-          points={points}
-          fill="none"
-          stroke={`var(--${series.color})`}
-          strokeWidth={2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {thresholds.map((t) => {
-          const y = yAt(t.value, max);
-          return (
-            <g key={t.label}>
-              <line
-                x1={PAD.left}
-                x2={W - PAD.right}
-                y1={y}
-                y2={y}
-                className="stroke-fg"
-                strokeWidth={1}
-                strokeDasharray="4 4"
-                opacity={0.45}
-              />
-              <text
-                x={W - PAD.right}
-                y={y - 6}
-                textAnchor="end"
-                className="fill-muted"
-                style={{ fontSize: 12, fontWeight: 500 }}
-              >
-                {t.label}
-              </text>
-            </g>
-          );
-        })}
-
-        {hover && (
-          <>
-            <line
-              x1={xAt(hover.index, count)}
-              x2={xAt(hover.index, count)}
-              y1={PAD.top}
-              y2={PAD.top + PLOT_H}
-              className="stroke-fg"
-              strokeWidth={1}
-              strokeDasharray="3 3"
-              opacity={0.4}
-            />
-            <circle
-              cx={xAt(hover.index, count)}
-              cy={yAt(series.values[hover.index], max)}
-              r={5}
-              fill={`var(--${series.color})`}
-              stroke="var(--surface)"
-              strokeWidth={2}
-            />
-          </>
-        )}
-
-        <XAxis labels={xLabels} count={count} />
-
-        <rect
-          x={PAD.left}
-          y={PAD.top}
-          width={PLOT_W}
-          height={PLOT_H}
-          fill="transparent"
-          onMouseMove={onMove}
-          onMouseLeave={onLeave}
-        />
-      </svg>
-
-      {hover && (
-        <Tooltip
-          hover={hover}
-          title={xLabels[hover.index] ?? ""}
-          rows={[
-            {
-              label: series.label,
-              value: formatValue(series.values[hover.index] ?? 0),
-              color: series.color,
-            },
-          ]}
-        />
-      )}
     </figure>
   );
 }

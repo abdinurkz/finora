@@ -7,14 +7,12 @@
  */
 
 import type { RecurringPayment } from "@/domain/recurring/payment";
-import type { Promotion } from "@/data/types";
 import { backupSchema, parsePaymentsLenient } from "./schema";
 import { BACKUP_VERSION, type BackupFile, type ImportReport, type Settings } from "./types";
 
 export function buildBackup(
   payments: readonly RecurringPayment[],
   settings: Settings,
-  promotions: readonly Promotion[] = [],
 ): BackupFile {
   return {
     app: "finora",
@@ -22,7 +20,6 @@ export function buildBackup(
     exportedAt: new Date().toISOString(),
     payments,
     settings,
-    promotions,
   };
 }
 
@@ -43,7 +40,6 @@ export function backupFileName(now: Date = new Date()): string {
 export interface ParsedBackup {
   readonly ok: boolean;
   readonly payments: readonly RecurringPayment[];
-  readonly promotions: readonly Promotion[];
   readonly settings: Settings | null;
   readonly report: ImportReport;
 }
@@ -59,17 +55,11 @@ export function parseBackup(input: unknown): ParsedBackup {
   const strict = backupSchema.safeParse(input);
 
   if (strict.success) {
-    const promotions = (strict.data.promotions ?? []) as Promotion[];
     return {
       ok: true,
       payments: strict.data.payments as RecurringPayment[],
-      promotions,
       settings: strict.data.settings,
-      report: {
-        imported: strict.data.payments.length + promotions.length,
-        skipped: 0,
-        errors: [],
-      },
+      report: { imported: strict.data.payments.length, skipped: 0, errors: [] },
     };
   }
 
@@ -84,7 +74,6 @@ export function parseBackup(input: unknown): ParsedBackup {
     return {
       ok: false,
       payments: [],
-      promotions: [],
       settings: null,
       report: {
         imported: 0,
@@ -97,7 +86,6 @@ export function parseBackup(input: unknown): ParsedBackup {
   return {
     ok: true,
     payments: valid as RecurringPayment[],
-    promotions: [],
     settings: null,
     report: { imported: valid.length, skipped: errors.length, errors },
   };

@@ -3,12 +3,7 @@ import type { Compounding, DepositKind, PayoutMode } from "@/domain/deposit/type
 import type { CivilDate, DayCount } from "@/domain/time";
 import type { Confidence } from "@/domain/registry";
 
-/**
- * Отбасы банк — не обычный БВУ: это жилищный строительный сберегательный банк
- * со своими правилами. Моделировать его как рядовой банк — значит получить
- * бессмыслицу в каталоге, поэтому вид организации выделен явно.
- */
-export type BankKind = "bvu" | "housing" | "development";
+export type BankKind = "bvu" | "development";
 
 export interface Bank {
   readonly id: string;
@@ -83,33 +78,3 @@ export interface CashbackProgram {
   readonly note?: string;
 }
 
-export type PromotionKind =
-  | "deposit-rate"
-  | "cashback"
-  | "fee-waiver"
-  | "installment"
-  | "referral"
-  | "other";
-
-export const PROMOTION_KIND_LABELS: Record<PromotionKind, string> = {
-  "deposit-rate": "Повышенная ставка",
-  cashback: "Повышенный кэшбэк",
-  "fee-waiver": "Без комиссии",
-  installment: "Рассрочка",
-  referral: "За приглашение",
-  other: "Другое",
-};
-
-export interface Promotion {
-  readonly id: string;
-  readonly bankId: string;
-  readonly title: string;
-  readonly summary: string;
-  readonly kind: PromotionKind;
-  readonly startsAt: CivilDate;
-  readonly endsAt?: CivilDate;
-  readonly conditions: readonly string[];
-  readonly url: string;
-  readonly verifiedAt: CivilDate;
-  readonly confidence: Confidence;
-}

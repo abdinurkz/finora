@@ -16,11 +16,7 @@ export const NAV: readonly NavGroup[] = [
   },
   {
     title: "Калькуляторы",
-    items: [
-      { href: "/deposits/calculator", label: "Депозит", icon: "calculator" },
-      { href: "/otbasy", label: "ОП Отбасы", icon: "home" },
-      { href: "/pension", label: "Пенсия", icon: "clock" },
-    ],
+    items: [{ href: "/deposits/calculator", label: "Депозит", icon: "calculator" }],
   },
   {
     title: "Мои деньги",
@@ -34,7 +30,6 @@ export const NAV: readonly NavGroup[] = [
     items: [
       { href: "/deposits", label: "Депозиты", icon: "bank" },
       { href: "/cashback", label: "Кэшбэк", icon: "card" },
-      { href: "/promos", label: "Акции", icon: "tag" },
     ],
   },
   {

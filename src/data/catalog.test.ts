@@ -3,8 +3,6 @@ import { isCivilDate } from "@/domain/time";
 import { BANKS, bankById } from "./banks";
 import { DEPOSIT_PRODUCTS, RATE_RECORDS, currentRate } from "./deposits";
 import { CASHBACK_PROGRAMS, allCashbackCategories, bestCardsFor } from "./cashback";
-import { PROMOTIONS, activePromotions, daysLeft, isExpired, isRunning } from "./promos";
-import type { Promotion } from "./types";
 
 describe("банки", () => {
   it("идентификаторы уникальны", () => {
@@ -17,12 +15,6 @@ describe("банки", () => {
       expect(isCivilDate(bank.verifiedAt), bank.id).toBe(true);
       expect(bank.siteUrl.startsWith("https://"), bank.id).toBe(true);
     }
-  });
-
-  it("Отбасы помечен как жилищный банк, а не как обычный БВУ", () => {
-    // Иначе он попадёт в каталог наравне с обычными вкладами и даст бессмыслицу.
-    expect(bankById("otbasy")?.kind).toBe("housing");
-    expect(BANKS.filter((b) => b.kind === "bvu").every((b) => b.id !== "otbasy")).toBe(true);
   });
 });
 
@@ -140,56 +132,5 @@ describe("кэшбэк", () => {
     const categories = allCashbackCategories();
     expect(categories.length).toBeGreaterThan(0);
     expect(new Set(categories).size).toBe(categories.length);
-  });
-});
-
-describe("акции", () => {
-  /**
-   * Каталог намеренно пуст: выдуманная акция с выдуманным сроком — это
-   * ложная запись, а не приближение, и пометка «требует проверки» её не спасает.
-   */
-  it("встроенный каталог пуст — акции вносит пользователь", () => {
-    expect(PROMOTIONS).toHaveLength(0);
-  });
-
-  const promo = (startsAt: string, endsAt?: string): Promotion => ({
-    id: "p1",
-    bankId: "kaspi",
-    title: "Тест",
-    summary: "",
-    kind: "cashback",
-    startsAt,
-    endsAt,
-    conditions: [],
-    url: "",
-    verifiedAt: "2026-08-17",
-    confidence: "likely",
-  });
-
-  it("определяет завершённые, будущие и действующие", () => {
-    expect(isExpired(promo("2026-01-01", "2026-06-01"), "2026-08-17")).toBe(true);
-    expect(isRunning(promo("2026-01-01", "2026-12-31"), "2026-08-17")).toBe(true);
-    expect(isRunning(promo("2026-09-01"), "2026-08-17")).toBe(false);
-  });
-
-  it("бессрочная акция не имеет отсчёта до окончания", () => {
-    expect(daysLeft(promo("2026-01-01"), "2026-08-17")).toBeNull();
-  });
-
-  it("считает дни до окончания", () => {
-    expect(daysLeft(promo("2026-01-01", "2026-08-27"), "2026-08-17")).toBe(10);
-  });
-
-  it("сортирует действующие по близости окончания, бессрочные — в конец", () => {
-    const list: Promotion[] = [
-      { ...promo("2026-01-01"), id: "бессрочная" },
-      { ...promo("2026-01-01", "2026-12-01"), id: "поздняя" },
-      { ...promo("2026-01-01", "2026-09-01"), id: "ранняя" },
-    ];
-    expect(activePromotions(list, "2026-08-17").map((p) => p.id)).toEqual([
-      "ранняя",
-      "поздняя",
-      "бессрочная",
-    ]);
   });
 });

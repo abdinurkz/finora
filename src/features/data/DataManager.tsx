@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { usePayments, usePromotions, useSettings } from "@/persistence/hooks";
+import { usePayments, useSettings } from "@/persistence/hooks";
 import { backupFileName, buildBackup, mergePayments, parseBackup, serializeBackup } from "@/persistence/backup";
 import type { ImportReport } from "@/persistence/types";
 import { formatMoney, plural } from "@/lib/format";
@@ -12,7 +12,6 @@ import { Card, CardTitle, Icon, Note, Stat, StatGrid } from "@/components/ui";
 export function DataManager({ today: serverToday }: { today: string }) {
   const today = useToday(serverToday);
   const { payments, replaceAll, clear } = usePayments();
-  const { promotions, replaceAll: replacePromotions } = usePromotions();
   const { settings } = useSettings();
   const fileInput = useRef<HTMLInputElement>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
@@ -20,7 +19,7 @@ export function DataManager({ today: serverToday }: { today: string }) {
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   function exportData() {
-    const json = serializeBackup(buildBackup(payments, settings, promotions));
+    const json = serializeBackup(buildBackup(payments, settings));
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
@@ -46,11 +45,6 @@ export function DataManager({ today: serverToday }: { today: string }) {
       }
 
       replaceAll(mergePayments(payments, parsed.payments));
-      if (parsed.promotions.length > 0) {
-        const byId = new Map(promotions.map((p) => [p.id, p]));
-        for (const p of parsed.promotions) byId.set(p.id, p);
-        replacePromotions([...byId.values()]);
-      }
       setReport(parsed.report);
     } catch {
       setError("Файл не является корректным JSON");

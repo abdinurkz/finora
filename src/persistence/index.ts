@@ -1,7 +1,6 @@
 import type { RecurringPayment } from "@/domain/recurring/payment";
-import type { Promotion } from "@/data/types";
 import { createLocalStorageAdapter } from "./adapters/local-storage";
-import { parsePaymentsLenient, parsePromotionsLenient, settingsSchema } from "./schema";
+import { parsePaymentsLenient, settingsSchema } from "./schema";
 import { Collection, ValueStore } from "./store";
 import { DEFAULT_SETTINGS, type Settings } from "./types";
 
@@ -16,15 +15,6 @@ export const paymentsCollection = new Collection<RecurringPayment>(
   (input) => {
     const { valid, errors } = parsePaymentsLenient(input);
     return { valid: valid as RecurringPayment[], errors };
-  },
-);
-
-export const promotionsCollection = new Collection<Promotion>(
-  "promotions",
-  adapter,
-  (input) => {
-    const { valid, errors } = parsePromotionsLenient(input);
-    return { valid: valid as Promotion[], errors };
   },
 );
 
