@@ -1,4 +1,6 @@
+import type { Wallet } from "@/domain/cashback/types";
 import type { RecurringPayment } from "@/domain/recurring/payment";
+import type { SpendLine } from "@/domain/spending";
 
 /**
  * Интерфейс намеренно асинхронный, хотя первый адаптер (localStorage) работает
@@ -35,6 +37,8 @@ export const DEFAULT_SETTINGS: Settings = {
   upcomingWindowDays: 30,
 };
 
+export const DEFAULT_WALLET: Wallet = { cards: [], includeIndividual: false };
+
 /** Формат файла резервной копии. */
 export interface BackupFile {
   readonly app: "finora";
@@ -42,9 +46,13 @@ export interface BackupFile {
   readonly exportedAt: string;
   readonly payments: readonly RecurringPayment[];
   readonly settings: Settings;
+  /** Появились во второй версии; в копиях первой их нет. */
+  readonly wallet?: Wallet;
+  readonly spendLines?: readonly SpendLine[];
 }
 
-export const BACKUP_VERSION = 1;
+/** 2 — добавлены кошелёк и статьи трат. Копии версии 1 читаются как прежде. */
+export const BACKUP_VERSION = 2;
 
 export interface ImportReport {
   readonly imported: number;

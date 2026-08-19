@@ -6,13 +6,16 @@
  * появляется в том же этапе, что и первая запись, а не «когда-нибудь потом».
  */
 
+import type { Wallet } from "@/domain/cashback/types";
 import type { RecurringPayment } from "@/domain/recurring/payment";
+import type { SpendLine } from "@/domain/spending";
 import { backupSchema, parsePaymentsLenient } from "./schema";
 import { BACKUP_VERSION, type BackupFile, type ImportReport, type Settings } from "./types";
 
 export function buildBackup(
   payments: readonly RecurringPayment[],
   settings: Settings,
+  extra: { wallet?: Wallet; spendLines?: readonly SpendLine[] } = {},
 ): BackupFile {
   return {
     app: "finora",
@@ -20,6 +23,8 @@ export function buildBackup(
     exportedAt: new Date().toISOString(),
     payments,
     settings,
+    wallet: extra.wallet,
+    spendLines: extra.spendLines,
   };
 }
 
@@ -41,6 +46,9 @@ export interface ParsedBackup {
   readonly ok: boolean;
   readonly payments: readonly RecurringPayment[];
   readonly settings: Settings | null;
+  /** Отсутствуют в копиях первой версии — тогда остаются пустыми. */
+  readonly wallet: Wallet | null;
+  readonly spendLines: readonly SpendLine[];
   readonly report: ImportReport;
 }
 
@@ -59,6 +67,8 @@ export function parseBackup(input: unknown): ParsedBackup {
       ok: true,
       payments: strict.data.payments as RecurringPayment[],
       settings: strict.data.settings,
+      wallet: strict.data.wallet ?? null,
+      spendLines: (strict.data.spendLines ?? []) as SpendLine[],
       report: { imported: strict.data.payments.length, skipped: 0, errors: [] },
     };
   }
@@ -75,6 +85,8 @@ export function parseBackup(input: unknown): ParsedBackup {
       ok: false,
       payments: [],
       settings: null,
+      wallet: null,
+      spendLines: [],
       report: {
         imported: 0,
         skipped: errors.length,
@@ -87,6 +99,8 @@ export function parseBackup(input: unknown): ParsedBackup {
     ok: true,
     payments: valid as RecurringPayment[],
     settings: null,
+    wallet: null,
+    spendLines: [],
     report: { imported: valid.length, skipped: errors.length, errors },
   };
 }

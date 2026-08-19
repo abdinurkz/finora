@@ -3,7 +3,8 @@ import type { Compounding, DepositKind, PayoutMode } from "@/domain/deposit/type
 import type { CivilDate, DayCount } from "@/domain/time";
 import type { Confidence } from "@/domain/registry";
 
-export type BankKind = "bvu" | "development";
+/** `nonbank` — небанковский эмитент кэшбэка: оператор связи, финтех. */
+export type BankKind = "bvu" | "development" | "nonbank";
 
 export interface Bank {
   readonly id: string;
@@ -53,28 +54,17 @@ export interface RateRecord {
   readonly supersededAt?: CivilDate;
 }
 
-export interface CashbackCategory {
-  readonly label: string;
-  readonly rate: number;
-  readonly capMinor?: number;
-  readonly conditions?: string;
-}
-
-export interface CashbackProgram {
-  readonly id: string;
-  readonly bankId: string;
-  readonly name: string;
-  readonly kind: "cashback" | "bonus" | "miles";
-  readonly cardProduct?: string;
-  readonly baseRate?: number;
-  readonly categories: readonly CashbackCategory[];
-  /** Категории меняются каждый месяц — как у Kaspi Bonus. */
-  readonly rotates: boolean;
-  readonly monthlyCapMinor?: number;
-  readonly redemption: "cash" | "bonus-only" | "partner-only";
-  readonly sourceUrl: string;
-  readonly verifiedAt: CivilDate;
-  readonly confidence: Confidence;
-  readonly note?: string;
-}
-
+/**
+ * Типы кэшбэка живут в домене, а не здесь: движок подбора обязан работать
+ * без импорта справочников. Реэкспорт оставлен, чтобы у авторов данных
+ * остался один адрес импорта.
+ */
+export type {
+  CardProduct,
+  CashbackOffer,
+  Eligibility,
+  MccCode,
+  Merchant,
+  OfferTarget,
+  SpendGroupId,
+} from "@/domain/cashback/types";

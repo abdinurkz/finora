@@ -8,7 +8,13 @@ import {
   upcomingPayments,
   yearlyTotalMinor,
 } from "@/domain/recurring/payment";
-import { usePayments } from "@/persistence/hooks";
+import { usePayments, useSpendLines, useWallet } from "@/persistence/hooks";
+import { collectSpendItems, estimateCashback } from "@/domain/cashback";
+import { yearMonthOf } from "@/domain/time";
+import { CARD_PRODUCTS } from "@/data/cards";
+import { isCashbackEligible } from "@/data/mcc";
+import { suggestMerchant } from "@/data/merchants";
+import { offersOn } from "@/data/offers";
 import { formatDate, formatDays, formatMoney, formatMoneyCompact, formatRate, plural } from "@/lib/format";
 import { useToday } from "@/lib/useToday";
 import { Badge, Card, CardTitle, EmptyState, Icon, Stat, StatGrid } from "@/components/ui";
@@ -16,6 +22,8 @@ import { Badge, Card, CardTitle, EmptyState, Icon, Stat, StatGrid } from "@/comp
 export function Dashboard({ today: serverToday }: { today: string }) {
   const today = useToday(serverToday);
   const { payments, status } = usePayments();
+  const { lines } = useSpendLines();
+  const { wallet } = useWallet();
 
   const subscriptions = useMemo(() => payments.filter((p) => p.kind === "subscription"), [payments]);
   const expenses = useMemo(() => payments.filter((p) => p.kind === "fixedExpense"), [payments]);
@@ -28,7 +36,13 @@ export function Dashboard({ today: serverToday }: { today: string }) {
   const upcoming = useMemo(() => upcomingPayments(payments, today, 30), [payments, today]);
   const categories = useMemo(() => totalsByCategory(payments, today), [payments, today]);
 
-  const hasData = payments.length > 0;
+  const cashback = useMemo(() => {
+    const { offers } = offersOn(yearMonthOf(today));
+    const items = collectSpendItems(payments, lines, suggestMerchant, today);
+    return estimateCashback(items, offers, CARD_PRODUCTS, wallet, { isCashbackEligible });
+  }, [payments, lines, wallet, today]);
+
+  const hasData = payments.length > 0 || lines.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,6 +100,48 @@ export function Dashboard({ today: serverToday }: { today: string }) {
               />
               <Stat label="За год" value={formatMoneyCompact(yearlyAll)} sub="при текущем наборе" />
             </StatGrid>
+          </Card>
+
+          <Card>
+            <CardTitle hint="Считается по отмеченным картам и категориям этого месяца.">
+              Кэшбэк за месяц
+            </CardTitle>
+            {wallet.cards.length === 0 ? (
+              <p className="text-sm text-muted">
+                Отметьте свои карты в{" "}
+                <Link href="/wallet" className="underline underline-offset-2 hover:text-fg">
+                  кошельке
+                </Link>
+                , и здесь появится, сколько вернётся с текущих трат.
+              </p>
+            ) : (
+              <StatGrid cols={3}>
+                <Stat
+                  label="Вернётся точно"
+                  value={formatMoney(cashback.guaranteedMonthlyMinor)}
+                  sub="по точным ставкам"
+                  tone="positive"
+                />
+                <Stat
+                  label="Может быть больше"
+                  value={
+                    cashback.ceilingMonthlyMinor > cashback.guaranteedMonthlyMinor
+                      ? `+${formatMoney(cashback.ceilingMonthlyMinor - cashback.guaranteedMonthlyMinor)}`
+                      : "—"
+                  }
+                  sub="по ставкам «до X %»"
+                />
+                <Stat
+                  label="За год"
+                  value={formatMoneyCompact(cashback.guaranteedYearlyMinor)}
+                  sub={
+                    <Link href="/cashback" className="underline underline-offset-2 hover:text-fg">
+                      чем платить
+                    </Link>
+                  }
+                />
+              </StatGrid>
+            )}
           </Card>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">

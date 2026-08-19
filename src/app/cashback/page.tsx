@@ -1,18 +1,17 @@
-import { CashbackExplorer } from "@/features/cashback/CashbackExplorer";
-import { BANKS } from "@/data/banks";
-import { CASHBACK_PROGRAMS } from "@/data/cashback";
+import { CashbackView } from "@/features/cashback/CashbackView";
 import { PageHeader } from "@/components/ui";
+import { todayCivil } from "@/lib/today";
 
-export const metadata = { title: "Кэшбэк и бонусы" };
+export const metadata = { title: "Кэшбэк" };
 
 export default function CashbackPage() {
   return (
     <>
       <PageHeader
-        title="Кэшбэк и бонусы БВУ"
-        description="Программы лояльности банков и подбор карты под категорию трат: сколько вернётся за месяц и за год."
+        title="Кэшбэк"
+        description="Какой картой платить за каждую трату и сколько вернётся за месяц. Категории банков меняются ежемесячно."
       />
-      <CashbackExplorer programs={CASHBACK_PROGRAMS} banks={BANKS} />
+      <CashbackView today={todayCivil()} />
     </>
   );
 }

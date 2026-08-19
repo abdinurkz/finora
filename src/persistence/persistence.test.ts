@@ -202,3 +202,72 @@ describe("слияние при импорте", () => {
     expect(merged[0].title).toBe("Актуальное");
   });
 });
+
+describe("совместимость со второй версией копии", () => {
+  /**
+   * Главная проверка обратной совместимости: файл, выгруженный до появления
+   * кошелька и статей трат, обязан читаться строгой схемой целиком — иначе
+   * он провалится в щадящий разбор и молча потеряет настройки.
+   */
+  it("копия первой версии читается без потери настроек", () => {
+    const v1 = {
+      app: "finora",
+      version: 1,
+      exportedAt: "2026-08-01T00:00:00.000Z",
+      payments: [samplePayment()],
+      settings: { currency: "KZT", upcomingWindowDays: 14 },
+    };
+
+    const parsed = parseBackup(v1);
+    expect(parsed.ok).toBe(true);
+    expect(parsed.payments).toHaveLength(1);
+    expect(parsed.settings?.upcomingWindowDays).toBe(14);
+    expect(parsed.wallet).toBeNull();
+    expect(parsed.spendLines).toEqual([]);
+  });
+
+  it("кошелёк и статьи трат переживают выгрузку и загрузку", () => {
+    const wallet = { cards: [{ cardId: "forte-card", salaryClient: true }], includeIndividual: false };
+    const spendLines = [
+      {
+        id: "sl1",
+        schemaVersion: 1,
+        title: "Продукты",
+        mccCode: "5411",
+        monthlyMinor: 120_000_00,
+        currency: "KZT" as const,
+        createdAt: "2026-08-01T00:00:00.000Z",
+        updatedAt: "2026-08-01T00:00:00.000Z",
+      },
+    ];
+
+    const backup = buildBackup([samplePayment()], DEFAULT_SETTINGS, { wallet, spendLines });
+    const parsed = parseBackup(JSON.parse(JSON.stringify(backup)));
+
+    expect(parsed.ok).toBe(true);
+    expect(parsed.wallet).toEqual(wallet);
+    expect(parsed.spendLines).toEqual(spendLines);
+  });
+
+  it("платёж без кода категории проходит проверку — переразметка не нужна", () => {
+    const { valid, errors } = parsePaymentsLenient([samplePayment()]);
+    expect(errors).toEqual([]);
+    expect(valid[0].mccCode).toBeUndefined();
+  });
+
+  it("код категории сохраняется, а мусор вместо него отбрасывается", () => {
+    const ok = parsePaymentsLenient([samplePayment({ mccCode: "5411" })]);
+    expect(ok.valid[0].mccCode).toBe("5411");
+
+    const bad = parsePaymentsLenient([samplePayment({ mccCode: "54" })]);
+    expect(bad.valid).toHaveLength(0);
+    expect(bad.errors).toHaveLength(1);
+  });
+
+  /** Слияние решает конфликты по updatedAt — миграция не должна его трогать. */
+  it("более свежая импортированная запись побеждает локальную", () => {
+    const local = samplePayment({ id: "p1", updatedAt: "2026-08-01T00:00:00.000Z" });
+    const incoming = samplePayment({ id: "p1", updatedAt: "2026-08-05T00:00:00.000Z", title: "Новее" });
+    expect(mergePayments([local], [incoming])[0].title).toBe("Новее");
+  });
+});

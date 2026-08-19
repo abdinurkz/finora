@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import type { Wallet } from "@/domain/cashback/types";
 import type { RecurringPayment } from "@/domain/recurring/payment";
-import { paymentsCollection, settingsStore, storageAdapter } from "./index";
+import type { SpendLine } from "@/domain/spending";
+import { paymentsCollection, settingsStore, spendLinesCollection, storageAdapter, walletStore } from "./index";
 import type { LoadStatus, Settings } from "./types";
 
 /**
@@ -75,5 +77,63 @@ export function useSettings(): { settings: Settings; setSettings: (s: Settings) 
   return {
     settings,
     setSettings: useCallback((s: Settings) => settingsStore.set(s), []),
+  };
+}
+
+export function useSpendLines(): {
+  lines: readonly SpendLine[];
+  status: LoadStatus;
+  save: (line: SpendLine) => void;
+  remove: (id: string) => void;
+  replaceAll: (lines: readonly SpendLine[]) => void;
+  clear: () => void;
+} {
+  const lines = useSyncExternalStore(
+    spendLinesCollection.subscribe,
+    spendLinesCollection.getSnapshot,
+    spendLinesCollection.getServerSnapshot,
+  );
+
+  const status = useSyncExternalStore(
+    spendLinesCollection.subscribe,
+    spendLinesCollection.getStatus,
+    spendLinesCollection.getServerStatus,
+  );
+
+  useEffect(() => {
+    void spendLinesCollection.hydrate();
+
+    return storageAdapter.subscribeExternal((collection) => {
+      if (collection === "spend-lines") void spendLinesCollection.refresh();
+    });
+  }, []);
+
+  return {
+    lines,
+    status,
+    save: useCallback((line: SpendLine) => spendLinesCollection.put(line), []),
+    remove: useCallback((id: string) => spendLinesCollection.remove(id), []),
+    replaceAll: useCallback(
+      (next: readonly SpendLine[]) => spendLinesCollection.replaceAll(next),
+      [],
+    ),
+    clear: useCallback(() => spendLinesCollection.clear(), []),
+  };
+}
+
+export function useWallet(): { wallet: Wallet; setWallet: (w: Wallet) => void } {
+  const wallet = useSyncExternalStore(
+    walletStore.subscribe,
+    walletStore.getSnapshot,
+    walletStore.getServerSnapshot,
+  );
+
+  useEffect(() => {
+    void walletStore.hydrate();
+  }, []);
+
+  return {
+    wallet,
+    setWallet: useCallback((w: Wallet) => walletStore.set(w), []),
   };
 }

@@ -34,6 +34,8 @@ const paymentBase = {
   amountKind: z.enum(["fixed", "variable"]),
   recurrence,
   categoryId: z.string().max(100),
+  // Ровно четыре цифры: MCC — код ISO 18245, а не свободная строка.
+  mccCode: z.string().regex(/^\d{4}$/).optional(),
   bankId: z.string().max(100).optional(),
   cardLabel: z.string().max(100).optional(),
   status: z.enum(["active", "paused", "cancelled"]),
@@ -72,18 +74,66 @@ const fixedExpense = z.object({
 export const paymentSchema = z.discriminatedUnion("kind", [subscription, fixedExpense]);
 export const paymentsSchema = z.array(paymentSchema);
 
+const spendLineSchema = z.object({
+  id: z.string().min(1),
+  schemaVersion: z.number().int().nonnegative(),
+  title: z.string().min(1).max(200),
+  mccCode: z.string().regex(/^\d{4}$/),
+  monthlyMinor: z.number().int().nonnegative(),
+  currency,
+  merchantId: z.string().max(100).optional(),
+  note: z.string().max(2000).optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const spendLinesSchema = z.array(spendLineSchema);
+
+export const walletSchema = z.object({
+  cards: z.array(
+    z.object({ cardId: z.string().min(1).max(100), salaryClient: z.boolean() }),
+  ),
+  includeIndividual: z.boolean(),
+});
+
 export const settingsSchema = z.object({
   currency,
   upcomingWindowDays: z.number().int().min(1).max(365),
 });
 
+/**
+ * `wallet` и `spendLines` необязательны намеренно: копии первой версии их
+ * не содержат, и строгий разбор обязан их принимать — иначе старый файл
+ * провалится в щадящий разбор и потеряет настройки.
+ */
 export const backupSchema = z.object({
   app: z.literal("finora"),
   version: z.number().int().min(1).max(BACKUP_VERSION),
   exportedAt: z.string(),
   payments: paymentsSchema,
   settings: settingsSchema,
+  wallet: walletSchema.optional(),
+  spendLines: spendLinesSchema.optional(),
 });
+
+/** Как и платежи: одна испорченная статья не должна стоить остальных. */
+export function parseSpendLinesLenient(input: unknown): {
+  valid: z.infer<typeof spendLinesSchema>;
+  errors: string[];
+} {
+  if (!Array.isArray(input)) return { valid: [], errors: ["Ожидался список статей"] };
+
+  const valid: z.infer<typeof spendLinesSchema> = [];
+  const errors: string[] = [];
+
+  for (const [i, raw] of input.entries()) {
+    const parsed = spendLineSchema.safeParse(raw);
+    if (parsed.success) valid.push(parsed.data);
+    else errors.push(`Статья №${i + 1}: ${parsed.error.issues[0]?.message ?? "неверный формат"}`);
+  }
+
+  return { valid, errors };
+}
 
 /**
  * Разбирает массив записей, отбрасывая битые вместо того, чтобы уронить всё.

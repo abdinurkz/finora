@@ -23,14 +23,14 @@ export const NAV: readonly NavGroup[] = [
     items: [
       { href: "/subscriptions", label: "Подписки", icon: "repeat" },
       { href: "/expenses", label: "Расходы", icon: "receipt" },
+      { href: "/spending", label: "Траты по категориям", icon: "tag" },
+      { href: "/wallet", label: "Мои карты", icon: "wallet" },
+      { href: "/cashback", label: "Кэшбэк", icon: "card" },
     ],
   },
   {
     title: "Справочники БВУ",
-    items: [
-      { href: "/deposits", label: "Депозиты", icon: "bank" },
-      { href: "/cashback", label: "Кэшбэк", icon: "card" },
-    ],
+    items: [{ href: "/deposits", label: "Депозиты", icon: "bank" }],
   },
   {
     title: "Служебное",

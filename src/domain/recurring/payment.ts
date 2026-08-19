@@ -18,7 +18,16 @@ import { type Rounding, roundWith } from "@/domain/money";
 import { type CivilDate, compare, diffDays } from "@/domain/time";
 import { type RecurrenceRule, monthlyEquivalentMinor, nextOccurrence, occurrencesBetween } from "./index";
 
-export const PAYMENT_SCHEMA_VERSION = 1;
+/**
+ * 2 — добавлено необязательное поле `mccCode`.
+ *
+ * Записи версии 1 МИГРАЦИИ НЕ ТРЕБУЮТ: изменение чисто аддитивное, а код
+ * категории при отсутствии поля выводится автоматически (см. domain/cashback).
+ * Проставлять версию задним числом нельзя ещё и потому, что слияние резервных
+ * копий разрешает конфликты по `updatedAt`, и перештамповка сделала бы
+ * локальную запись «свежее» действительно более новой импортированной.
+ */
+export const PAYMENT_SCHEMA_VERSION = 2;
 
 export type PaymentStatus = "active" | "paused" | "cancelled";
 
@@ -34,6 +43,12 @@ interface RecurringPaymentBase {
   readonly amountKind: AmountKind;
   readonly recurrence: RecurrenceRule;
   readonly categoryId: string;
+  /**
+   * Код категории торговой точки. Необязателен: если его нет, он выводится
+   * по мерчанту или по категории — старые записи работают без переразметки.
+   * Заполняется только когда пользователь поправил код вручную.
+   */
+  readonly mccCode?: string;
   readonly bankId?: string;
   readonly cardLabel?: string;
   readonly status: PaymentStatus;

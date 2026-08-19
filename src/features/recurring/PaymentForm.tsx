@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CURRENCIES, type Currency } from "@/domain/money";
 import type { RecurrenceUnit } from "@/domain/recurring";
 import {
@@ -12,7 +12,11 @@ import {
   SUBSCRIPTION_CATEGORIES,
   createPayment,
 } from "@/domain/recurring/payment";
+import { resolvePaymentMcc } from "@/domain/cashback";
+import { suggestMerchant } from "@/data/merchants";
+import { mccByCode } from "@/data/mcc";
 import { Card, CardTitle, Note } from "@/components/ui";
+import { MccField } from "@/components/mcc";
 import {
   DateInput,
   Field,
@@ -45,6 +49,18 @@ const CATEGORY_OPTIONS = SUBSCRIPTION_CATEGORIES.map((c) => ({ value: c, label: 
 
 const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
 
+/** Откуда взялся код — чтобы человек мог проверить, а не поверить на слово. */
+function explainMcc(auto: ReturnType<typeof resolvePaymentMcc>): string {
+  switch (auto.source) {
+    case "merchant":
+      return `по названию: ${auto.via}`;
+    case "category":
+      return `по категории: ${auto.via}`;
+    default:
+      return "";
+  }
+}
+
 export function PaymentForm({
   kind,
   initial,
@@ -67,6 +83,8 @@ export function PaymentForm({
   const [anchor, setAnchor] = useState(initial?.recurrence.anchor ?? today);
   const [status, setStatus] = useState<PaymentStatus>(initial?.status ?? "active");
   const [note, setNote] = useState(initial?.note ?? "");
+  /** Пустая строка — «определять автоматически». */
+  const [mccCode, setMccCode] = useState(initial?.mccCode ?? "");
 
   const [categoryId, setCategoryId] = useState(
     initial?.kind === "subscription" ? initial.categoryId : (SUBSCRIPTION_CATEGORIES[0] as string),
@@ -88,6 +106,19 @@ export function PaymentForm({
 
   const canSave = title.trim().length > 0 && amountMinor > 0;
 
+  /**
+   * Что получится, если код не указывать вручную. Показываем не только сам код,
+   * но и откуда он взялся: «по названию: Netflix» проверяемо, а голое «5815» —
+   * нет.
+   */
+  const auto = useMemo(() => {
+    const draft = (kind === "subscription"
+      ? { kind, title, categoryId, vendor: vendor.trim() || undefined }
+      : { kind, title, categoryId: EXPENSE_TYPE_LABELS[expenseType], expenseType, provider: provider.trim() || undefined }
+    ) as RecurringPayment;
+    return resolvePaymentMcc(draft, suggestMerchant);
+  }, [kind, title, categoryId, vendor, expenseType, provider]);
+
   function submit() {
     if (!canSave) return;
 
@@ -99,6 +130,7 @@ export function PaymentForm({
       recurrence: { anchor, unit, every, onShortMonth: "lastDay" as const },
       status,
       note: note.trim() || undefined,
+      mccCode: mccCode === "" ? undefined : mccCode,
     };
 
     const specific =
@@ -207,6 +239,48 @@ export function PaymentForm({
         <Field label="Заметка" htmlFor="note" hint="Необязательно">
           <TextInput id="note" value={note} onChange={setNote} />
         </Field>
+
+        <div className="sm:col-span-2">
+          <Field
+            label="Категория MCC"
+            htmlFor="mcc"
+            hint="Нужна для подбора кэшбэка"
+          >
+            {mccCode === "" ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+                {auto.code ? (
+                  <>
+                    <span className="tabular text-fg">{auto.code}</span>
+                    <span className="text-muted">{mccByCode(auto.code)?.name}</span>
+                    <span className="text-xs text-faint">{explainMcc(auto)}</span>
+                  </>
+                ) : (
+                  <span className="text-muted">
+                    определить не удалось — кэшбэк по этому платежу считаться не будет
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setMccCode(auto.code ?? "5411")}
+                  className="ml-auto text-xs text-muted underline underline-offset-2 hover:text-fg"
+                >
+                  указать вручную
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <MccField id="mcc" value={mccCode} onChange={setMccCode} />
+                <button
+                  type="button"
+                  onClick={() => setMccCode("")}
+                  className="self-start text-xs text-muted underline underline-offset-2 hover:text-fg"
+                >
+                  вернуть автоопределение
+                </button>
+              </div>
+            )}
+          </Field>
+        </div>
       </div>
 
       <div className="mt-5">

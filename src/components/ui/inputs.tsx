@@ -244,6 +244,7 @@ export function Toggle({
   hint?: string;
 }) {
   const id = useId();
+  const labelId = `${id}-label`;
   return (
     <div className="flex items-start gap-3">
       <button
@@ -251,6 +252,9 @@ export function Toggle({
         type="button"
         role="switch"
         aria-checked={checked}
+        // `htmlFor` не именует кнопку — метки работают только для полей формы.
+        // Без этого список переключателей читается как «switch, switch, switch».
+        aria-labelledby={labelId}
         onClick={() => onChange(!checked)}
         className={cn(
           "relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors",
@@ -265,7 +269,9 @@ export function Toggle({
         />
       </button>
       <label htmlFor={id} className="cursor-pointer select-none">
-        <span className="block text-sm text-fg">{label}</span>
+        <span id={labelId} className="block text-sm text-fg">
+          {label}
+        </span>
         {hint && <span className="block text-xs text-muted">{hint}</span>}
       </label>
     </div>

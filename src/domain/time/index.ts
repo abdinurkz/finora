@@ -199,3 +199,43 @@ export function yearFraction(from: CivilDate, to: CivilDate, dayCount: DayCount)
       return diffDays(from, to) / 365;
   }
 }
+
+/* ── Месяц как ключ ─────────────────────────────────────────────── */
+
+/**
+ * «YYYY-MM». Нужен там, где величина привязана к месяцу целиком, а не к дню:
+ * банки публикуют категории кэшбэка на месяц, а не на дату.
+ */
+export type YearMonth = string;
+
+const YEAR_MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+export function isYearMonth(value: string): boolean {
+  return YEAR_MONTH_RE.test(value);
+}
+
+export function yearMonth(y: number, m: number): YearMonth {
+  return `${pad(y, 4)}-${pad(m)}`;
+}
+
+/** Месяц, которому принадлежит дата. */
+export function yearMonthOf(date: CivilDate): YearMonth {
+  return date.slice(0, 7);
+}
+
+/** Первый день месяца — для перевода периода обратно в дату. */
+export function firstDayOf(period: YearMonth): CivilDate {
+  return `${period}-01`;
+}
+
+export function compareYearMonth(a: YearMonth, b: YearMonth): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** Сдвиг на целое число месяцев: addYearMonths("2026-08", -1) === "2026-07". */
+export function addYearMonths(period: YearMonth, months: number): YearMonth {
+  const y = Number(period.slice(0, 4));
+  const m = Number(period.slice(5, 7));
+  const total = y * 12 + (m - 1) + months;
+  return yearMonth(Math.floor(total / 12), (total % 12) + 1);
+}

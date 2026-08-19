@@ -104,6 +104,47 @@ export const BANKS: readonly Bank[] = [
     isKdifMember: true,
     verifiedAt: "2026-08-17",
   },
+  {
+    id: "nurbank",
+    name: "Нурбанк",
+    legalName: "АО «Нурбанк»",
+    kind: "bvu",
+    siteUrl: "https://nurbank.kz",
+    isKdifMember: true,
+    verifiedAt: "2026-08-18",
+  },
+  {
+    id: "alatau",
+    name: "Alatau City Bank",
+    legalName: "АО «Alatau City Bank»",
+    kind: "bvu",
+    siteUrl: "https://alataucitybank.kz",
+    isKdifMember: true,
+    verifiedAt: "2026-08-18",
+  },
+  /*
+   * Небанковские эмитенты кэшбэка. В подборках банков они стоят наравне
+   * с БВУ («100 % на транспорт абонентам Activ»), хотя это оператор связи
+   * и страховой сервис. Отдельный вид, чтобы их нельзя было спутать
+   * с банками при расчёте гарантий КФГД.
+   */
+  {
+    id: "activ",
+    name: "Activ",
+    legalName: "АО «Кселл»",
+    kind: "nonbank",
+    siteUrl: "https://activ.kz",
+    isKdifMember: false,
+    verifiedAt: "2026-08-18",
+  },
+  {
+    id: "avtokarta",
+    name: "Автокарта",
+    kind: "nonbank",
+    siteUrl: "https://avtokarta.kz",
+    isKdifMember: false,
+    verifiedAt: "2026-08-18",
+  },
 ];
 
 export function bankById(id: string): Bank | undefined {

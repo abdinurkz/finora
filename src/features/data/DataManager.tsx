@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { usePayments, useSettings } from "@/persistence/hooks";
+import { usePayments, useSettings, useSpendLines, useWallet } from "@/persistence/hooks";
 import { backupFileName, buildBackup, mergePayments, parseBackup, serializeBackup } from "@/persistence/backup";
 import type { ImportReport } from "@/persistence/types";
 import { formatMoney, plural } from "@/lib/format";
@@ -13,13 +13,15 @@ export function DataManager({ today: serverToday }: { today: string }) {
   const today = useToday(serverToday);
   const { payments, replaceAll, clear } = usePayments();
   const { settings } = useSettings();
+  const { lines, replaceAll: replaceLines, clear: clearLines } = useSpendLines();
+  const { wallet, setWallet } = useWallet();
   const fileInput = useRef<HTMLInputElement>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   function exportData() {
-    const json = serializeBackup(buildBackup(payments, settings));
+    const json = serializeBackup(buildBackup(payments, settings, { wallet, spendLines: lines }));
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
@@ -45,6 +47,10 @@ export function DataManager({ today: serverToday }: { today: string }) {
       }
 
       replaceAll(mergePayments(payments, parsed.payments));
+      // Кошелёк и статьи трат заменяются целиком: сливать их по id нечего —
+      // это единый снимок, а не история правок.
+      if (parsed.wallet) setWallet(parsed.wallet);
+      if (parsed.spendLines.length > 0) replaceLines(parsed.spendLines);
       setReport(parsed.report);
     } catch {
       setError("Файл не является корректным JSON");
@@ -155,6 +161,7 @@ export function DataManager({ today: serverToday }: { today: string }) {
               type="button"
               onClick={() => {
                 clear();
+                clearLines();
                 setConfirmingClear(false);
               }}
               className="rounded-lg bg-negative px-3 py-2 text-sm font-medium text-white"
